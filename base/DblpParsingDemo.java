@@ -72,6 +72,9 @@ public class DblpParsingDemo {
         try (DblpPublicationGenerator gen = new DblpPublicationGenerator(xmlPath, dtdPath, 256)) {
             // Boucle de consommation : on traite les publications une par une,
             // jusqu'à atteindre la limite (si fournie) ou la fin du fichier.
+
+            UnionFind uf = new UnionFind();
+
             while (pubCount < limit) {
 
                 // nextPublication() renvoie :
@@ -83,22 +86,25 @@ public class DblpParsingDemo {
                 if (opt.isEmpty()) break; // EOF
 
                 pubCount++;
+
+                if (pubCount % Math.pow(10, 5) == 0) {
+                    System.out.println(" Exigence online : " + pubCount + "ème publication");
+                    System.out.println("Il y a " + uf.getCount() + " communautés.");
+                }
+
                 DblpPublicationGenerator.Publication p = opt.get();
-
-                System.out.println("=== Publication #" + pubCount + " ===");
-                System.out.println("  Type    : " + p.type);
-                System.out.println("  Auteurs : " + p.authors);
-                System.out.println();
-
                 List<String> authors = p.authors;
                 if (authors == null || authors.isEmpty()) {
                     continue;
                 }
 
-                int k = authors.size();
                 // 1er auteur
                 String first = authors.get(0);
+                for (int i = 1; i < authors.size(); i++) {
+                    uf.union(first, authors.get(i));
+                }
 
+                int k = authors.size();
                 // autres auteurs (peut être vide si k == 1)
                 List<String> others = (k > 1) ? authors.subList(1, k) : List.of();
 
