@@ -1,12 +1,81 @@
 import java.io.FileNotFoundException;
 import java.nio.file.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Usage:
  *   java -Xmx2g DblpParsingDemo <dblp.xml|dblp.xml.gz> <dblp.dtd> [--limit=1000000]
  */
 public class DblpParsingDemo {
+
+    /**
+     * @param p la publication à traiter
+     * @param uf la structure Union-Find
+     *
+     * Traite une publication en ajoutant ses auteurs à l'Union-Find.
+     */
+    private static void processPublication(DblpPublicationGenerator.Publication p, UnionFind uf) { 
+
+        // Publication sans auteur
+        List<String> authors = p.authors;
+        if (authors == null || authors.isEmpty()) {
+            return;
+        }
+
+        // Noms d'auteur-rice-s répétés dans la même publication
+        List<String> uniqueAuthors = authors.stream()
+                                            .distinct()
+                                            .collect(Collectors.toList());
+
+        if (uniqueAuthors.size() == 1) {
+            uf.add(uniqueAuthors.get(0));
+            return;
+        }
+
+        String first = uniqueAuthors.get(0);
+        for (int i = 1; i < authors.size(); i++) {
+            uf.union(first, authors.get(i));
+        }
+    }
+
+    /**
+     * @param uf les communautés
+     *
+     * Retourne la taille des 10 plus grandes communautés par ordre décroissante.
+     */
+    private static List<Integer> getTop10(UnionFind uf) { 
+
+        PriorityQueue<Integer> minHeap = new PriorityQueue<>(10);
+        Map<String, Integer> sizeOfUf = uf.sizeOfComm();
+        for (int community :  sizeOfUf.values()) {
+            if (minHeap.size() < 10) {
+                minHeap.offer(community);
+            }
+            else if (community > minHeap.peek()) {
+                minHeap.poll();
+                minHeap.offer(community);
+            }
+        }
+        List<Integer> top10 = new ArrayList<>(minHeap);
+        Collections.sort(top10, Collections.reverseOrder());
+        return top10;
+    }
+    private static void printStats(long pubCount, UnionFind uf, List<Integer> top10) { 
+        /**
+         * @param pubCount le nombre de publication
+         * @param uf les communautés
+         * @param top10 la liste contenant les tailles des 10 plus grandes communautés
+         *
+         * S'occupe d'afficher le résultat après le parsing
+         */
+        System.out.println("------ Exigence online : " + pubCount + "ème publication -----");
+        System.out.println("Il y a " + uf.getCount() + " communautés.");
+        System.out.println("Top 10 des plus grandes communautés");
+        for (int i = 0; i < top10.size(); i++) {
+            System.out.println((i+1) + ". " + top10.get(i) + " auteurs");
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
@@ -86,23 +155,17 @@ public class DblpParsingDemo {
                 if (opt.isEmpty()) break; // EOF
 
                 pubCount++;
-
-                if (pubCount % Math.pow(10, 5) == 0) {
-                    System.out.println(" Exigence online : " + pubCount + "ème publication");
-                    System.out.println("Il y a " + uf.getCount() + " communautés.");
-                }
-
+                
                 DblpPublicationGenerator.Publication p = opt.get();
-                List<String> authors = p.authors;
-                if (authors == null || authors.isEmpty()) {
-                    continue;
+
+                processPublication(opt.get(), uf);
+                // Condition online
+                if (pubCount % Math.pow(10, 5) == 0) {
+                    printStats(pubCount, uf, getTop10(uf));
                 }
 
-                // 1er auteur
-                String first = authors.get(0);
-                for (int i = 1; i < authors.size(); i++) {
-                    uf.union(first, authors.get(i));
-                }
+                // Pour éviter des erreurs à la compilation après factorisation
+                List<String> authors = p.authors;
 
                 int k = authors.size();
                 // autres auteurs (peut être vide si k == 1)
