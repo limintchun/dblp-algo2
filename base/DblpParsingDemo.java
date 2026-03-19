@@ -1,4 +1,4 @@
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -77,6 +77,14 @@ public class DblpParsingDemo {
         }
     }
 
+    private static List<Integer> getSizeOfCommunities(UnionFind uf) {
+        Map<String, Integer> sizeOfCommunities = uf.sizeOfComm();
+        List<Integer> res = new ArrayList<>(); 
+        for (int community : sizeOfCommunities.values()) {
+            res.add(community);
+        }
+        return res;
+    }
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
             System.err.println("""
@@ -171,6 +179,14 @@ public class DblpParsingDemo {
                 // autres auteurs (peut être vide si k == 1)
                 List<String> others = (k > 1) ? authors.subList(1, k) : List.of();
 
+            }
+            List<Integer> res = getSizeOfCommunities(uf);
+            // Écriture dans un fichier CSV
+            try (PrintWriter pw = new PrintWriter("communities.csv")) {
+                pw.println("size");
+                for (int size : res) {
+                    pw.println(size);
+                }
             }
         }
     }
