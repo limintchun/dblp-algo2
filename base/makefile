@@ -1,23 +1,24 @@
+# Variables pour faciliter la maintenance
+JC = javac
+JVM = java
+CP = ".:algs4.jar"
+MAIN = DblpParsingDemo
 XML = dblp-2026-01-01.xml.gz
 DTD = dblp.dtd
+LIMIT = 100000 
 
-CLASSPATH = .:../lib/matplotlib4j-0.5.0.jar:../lib/slf4j-api-1.7.36.jar:../lib/slf4j-simple-1.7.36.jar
+# La cible par défaut (lance la compilation puis l'exécution)
+all: run
 
-LIMIT = 1000000
-
+# Cible pour compiler uniquement
 compile:
-	javac DblpPublicationGenerator.java DblpParsingDemo.java UnionFind.java
+	$(JC) -cp $(CP) $(MAIN).java
 
-compilehist:
-	javac -cp $(CLASSPATH) *.java
-
+# Cible pour exécuter
+# On ajoute la dépendance 'compile' pour s'assurer que le .class est à jour
 run: compile
-	java -Xmx2g DblpParsingDemo $(XML) $(DTD) --limit=$(LIMIT)
+	$(JVM) -cp $(CP) $(MAIN) $(XML) $(DTD) --limit=$(LIMIT)
 
-run-full: compile
-	java -Xmx2g DblpParsingDemo $(XML) $(DTD)
-
-run-hist:
-	java -cp $(CLASSPATH) Hist
+# Cible pour nettoyer les fichiers compilés
 clean:
 	rm -f *.class

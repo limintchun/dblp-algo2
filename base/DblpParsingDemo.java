@@ -3,11 +3,91 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import edu.princeton.cs.algs4.Digraph;
+import edu.princeton.cs.algs4.KosarajuSharirSCC;
+// on a le droit de l'utiliser mais il faut le citer dans le rapport
+
 /**
  * Usage:
  *   java -Xmx2g DblpParsingDemo <dblp.xml|dblp.xml.gz> <dblp.dtd> [--limit=1000000]
  */
 public class DblpParsingDemo {
+    /**
+     * @param graph le graphe orienté contenant les auteurs ayant minimum 6 publications en communs
+     * @param source le sommet sur lequel on veut commencer le calcul du plus court chemin
+     * @param destination le sommet sur lequel on veut arriver
+     *
+     * Calcule le plus cours chemin
+     */
+    private static int BFS(Digraph graph, int source, int destination) {
+        Queue<Integer> q = new LinkedList<>();
+        int[] distTo = new int[graph.V()];
+        Arrays.fill(distTo, -1);
+
+        distTo[source] = 0;
+        q.add(source);
+
+        while (!q.isEmpty()) {
+            int v = q.poll();
+            if (v == destination) {
+                return distTo[v];
+            }
+
+            for (int w : graph.adj(v)) {
+                if (distTo[w] == -1) {
+                    distTo[w] = distTo[v] + 1;
+                    q.add(w);
+                }
+            }
+        }
+        return -1;
+    }
+
+    /*
+     * @param uf Regroupements d'auteurs
+     * @return Une liste d'entiers conteant les tailles des 10 plus grandes communautés triée par ordre décroissant
+     *
+     * Calcule et extrait la taille des 10 plus grandes communautés identifées par la structure Union-Find.
+     */
+    private static List<Integer> getTop10(UnionFind uf) {
+        return processTop10(uf.sizeOfComm().values());
+    }
+
+    /**
+     * @param scc Contient les identifiants de composante pour chaque sommet
+     * @param numVertices Le nombre total de sommets à parcourir dans le graphe
+     * @return Une liste des tailles des 10 plus grandes commposantes fortement connexes, triée par ordre décroissant
+     *
+     * Calcule et extrait la taille des 10 plus grandes communautés identifées par la structure SCC.
+     */
+    private static List<Integer> getTop10(KosarajuSharirSCC scc, int numVertices) {
+        int m = scc.count();
+        int[] counts = new int[m];
+        for (int v = 0; v < numVertices; v++) {
+            counts[scc.id(v)]++;
+        }
+
+        List<Integer> sizes = new ArrayList<>();
+        for (int s : counts) sizes.add(s);
+        return processTop10(sizes);
+    }
+
+    /**
+     * @param allSizes Collection contenant les tailles de toutes les communautés identifées
+     * @return Une liste contenant les 10 tailles les plus élevées, triée par ordre décroissant
+     *
+     * Extrait les 10 pulus grandes valeurs d'une collection de tailles
+     */
+    private static List<Integer> processTop10(Collection<Integer> allSizes) {
+        PriorityQueue<Integer> minHeap = new PriorityQueue<>(11);
+        for (int size : allSizes) {
+            minHeap.offer(size);
+            if (minHeap.size() > 10) minHeap.poll();
+        }
+        List<Integer> top10 = new ArrayList<>(minHeap);
+        top10.sort(Collections.reverseOrder());
+        return top10;
+    }
 
     /**
      * @param p la publication à traiter
@@ -39,28 +119,6 @@ public class DblpParsingDemo {
         }
     }
 
-    /**
-     * @param uf les communautés
-     *
-     * Retourne la taille des 10 plus grandes communautés par ordre décroissante.
-     */
-    private static List<Integer> getTop10(UnionFind uf) { 
-
-        PriorityQueue<Integer> minHeap = new PriorityQueue<>(10);
-        Map<String, Integer> sizeOfUf = uf.sizeOfComm();
-        for (int community :  sizeOfUf.values()) {
-            if (minHeap.size() < 10) {
-                minHeap.offer(community);
-            }
-            else if (community > minHeap.peek()) {
-                minHeap.poll();
-                minHeap.offer(community);
-            }
-        }
-        List<Integer> top10 = new ArrayList<>(minHeap);
-        Collections.sort(top10, Collections.reverseOrder());
-        return top10;
-    }
     private static void printStats(long pubCount, UnionFind uf, List<Integer> top10) { 
         /**
          * @param pubCount le nombre de publication
@@ -151,6 +209,7 @@ public class DblpParsingDemo {
             // jusqu'à atteindre la limite (si fournie) ou la fin du fichier.
 
             UnionFind uf = new UnionFind();
+            Map<String, Integer>  relation = new HashMap<>();
 
             while (pubCount < limit) {
 
@@ -179,7 +238,82 @@ public class DblpParsingDemo {
                 // autres auteurs (peut être vide si k == 1)
                 List<String> others = (k > 1) ? authors.subList(1, k) : List.of();
 
+                // Préparation pour la construction du graphe orienté
+                if (k >= 2) {
+                    String authorA = authors.get(0);
+
+                    for (int i = 1; i < k; i++) {
+                        String authorB = authors.get(i);
+
+                        if (!authorB.equals(authorA)) {
+                            String pair = authorA + "->" + authorB;
+
+                            relation.merge(pair, 1, Integer::sum);
+                        }
+                    }
+                }
             }
+
+            Map<String, Integer> authorsToId = new HashMap<>();
+            int idCount = 0;
+
+            for (Map.Entry<String, Integer> entry : relation.entrySet()) {
+                if (entry.getValue() >= 6) {
+                    String[] parts = entry.getKey().split("->");
+                    for (String name : parts) {
+                        if (!authorsToId.containsKey(name)) {
+                            authorsToId.put(name, idCount++);
+                        }
+                    }
+                }
+            }
+
+            Digraph graph = new Digraph(idCount);
+            for (Map.Entry<String, Integer> entry : relation.entrySet()) {
+                if (entry.getValue() >= 6) {
+                    String[] parts = entry.getKey().split("->");
+                    int u = authorsToId.get(parts[0]);
+                    int v = authorsToId.get(parts[1]);
+                    graph.addEdge(u, v);
+                }
+            }
+
+            // On inverse la Symbol Table pour retrouver le nom à partir de l'ID
+            String[] nameById = new String[idCount];
+            for (String name : authorsToId.keySet()) {
+                nameById[authorsToId.get(name)] = name;
+            }
+
+            // Selon https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/KosarajuSharirSCC.html, c'est un ADT qui permet de calculer les composentes à connexité forte
+            KosarajuSharirSCC scc = new KosarajuSharirSCC(graph);
+
+            // Pour regrouper les auteurs par communauté
+            Map<Integer, List<String>> components = new HashMap<>();
+            for (int v = 0; v < graph.V(); v++) {
+                int id = scc.id(v);
+                components.computeIfAbsent(id, k -> new ArrayList<>()).add(nameById[v]);
+            }
+
+            System.out.println("Nombre de SCC détectées : " + scc.count());
+
+            System.out.println("\n --- Test du plus court chemin ---");
+            Random rand = new Random();
+            int nbTests = scc.count(); // Nombre de paires à tester
+            int cheminsTrouves = 0;
+            System.out.println("\n--- Test de " + nbTests + " paires aléatoires ---");
+            for (int i = 0; i < nbTests; i++) {
+                int idA = rand.nextInt(idCount);
+                int idB = rand.nextInt(idCount);
+
+                int dist = BFS(graph, idA, idB);
+
+                if (dist != -1) {
+                    System.out.println("[SUCCÈS] " + nameById[idA] + " -> " + nameById[idB] + " : " + dist + " sauts");
+                    cheminsTrouves++;
+                }
+            }
+            System.out.println("Bilan : " + cheminsTrouves + "/" + nbTests + " chemins trouvés.");
+
             List<Integer> res = getSizeOfCommunities(uf);
             // Écriture dans un fichier CSV
             try (PrintWriter pw = new PrintWriter("communities.csv")) {
