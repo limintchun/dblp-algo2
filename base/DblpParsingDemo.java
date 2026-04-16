@@ -14,36 +14,36 @@ import edu.princeton.cs.algs4.KosarajuSharirSCC;
 public class DblpParsingDemo {
     /**
      * @param graph le graphe orienté contenant les auteurs ayant minimum 6 publications en communs
-     * @param source le sommet sur lequel on veut commencer le calcul du plus court chemin
-     * @param destination le sommet sur lequel on veut arriver
+     * @param vertices les sommets qu'on va parcourir
      *
      * Calcule le plus cours chemin
      */
-    private static int BFS(Digraph graph, int source, int destination) {
-        Queue<Integer> q = new LinkedList<>();
-        int[] distTo = new int[graph.V()];
-        Arrays.fill(distTo, -1);
-
-        distTo[source] = 0;
-        q.add(source);
-
-        while (!q.isEmpty()) {
-            int v = q.poll();
-            if (v == destination) {
-                return distTo[v];
-            }
-
-            for (int w : graph.adj(v)) {
-                if (distTo[w] == -1) {
-                    distTo[w] = distTo[v] + 1;
-                    q.add(w);
+    private static int computeDiameter(Digraph graph, List<Integer> vertices) {
+        Set<Integer> inComponent = new HashSet<>(vertices);
+        int diameter = 0;
+        for (int src : vertices) {
+            // BFS depuis src, en restant dans le sous-graphe
+            Map<Integer, Integer> dist = new HashMap<>();
+            Queue<Integer> queue = new LinkedList<>();
+            dist.put(src, 0);
+            queue.add(src);
+            while (!queue.isEmpty()) {
+                int u = queue.poll();
+                for (int w : graph.adj(u)) {
+                    if (inComponent.contains(w) && !dist.containsKey(w)) {
+                        dist.put(w, dist.get(u) + 1);
+                        queue.add(w);
+                        diameter = Math.max(diameter, dist.get(w));
+                    }
                 }
             }
         }
-        return -1;
+        return diameter;
     }
 
-    /*
+
+
+    /**
      * @param uf Regroupements d'auteurs
      * @return Une liste d'entiers conteant les tailles des 10 plus grandes communautés triée par ordre décroissant
      *
@@ -114,8 +114,39 @@ public class DblpParsingDemo {
         }
 
         String first = uniqueAuthors.get(0);
-        for (int i = 1; i < authors.size(); i++) {
-            uf.union(first, authors.get(i));
+        for (int i = 1; i < uniqueAuthors.size(); i++) {
+            uf.union(first, uniqueAuthors.get(i));
+        }
+    }
+
+    /**
+     * @param components Map des CFC avec leurs membres
+     * @param graph Le graphe orienté filtré
+     * @param nameById Tableau associant un ID à un nom d'auteur
+     */
+    private static void printTop10SCC(Map<Integer, List<String>> components, Digraph graph, String[] nameById) {
+        Map<String, Integer> authorsToId = new HashMap<>();
+        for (int i = 0; i < nameById.length; i++) authorsToId.put(nameById[i], i);
+
+        List<Map.Entry<Integer, List<String>>> top10 = components.entrySet().stream()
+            .sorted((a, b) -> b.getValue().size() - a.getValue().size())
+            .limit(10)
+            .collect(Collectors.toList());
+
+        for (int rank = 0; rank < top10.size(); rank++) {
+            List<String> names = top10.get(rank).getValue();
+
+            List<Integer> vertices = names.stream()
+                .map(authorsToId::get)
+                .collect(Collectors.toList());
+
+            int diameter = computeDiameter(graph, vertices);
+
+            System.out.println("------ Communauté #" + (rank + 1)+ " -----");
+            System.out.println("Taille : " + vertices.size());
+            System.out.println("Diamètre : " + diameter);
+            System.out.println("Auteurs :");
+            for (String name : names) System.out.println("  " + name);
         }
     }
 
@@ -143,6 +174,105 @@ public class DblpParsingDemo {
         }
         return res;
     }
+
+    /**
+     * @param relation Map des paires A->B avec leur compteur
+     * @param authors Liste des auteurs de la publication courante
+     */
+
+    private static void updateRelation(Map<String, Integer> relation, List<String> authors) {
+        int k = authors.size();
+
+        // Préparation pour la construction du graphe orienté
+        if (k >= 2) {
+            String authorA = authors.get(0);
+
+            for (int i = 1; i < k; i++) {
+                String authorB = authors.get(i);
+
+                if (!authorB.equals(authorA)) {
+                    String pair = authorA + "->" + authorB;
+
+                    relation.merge(pair, 1, Integer::sum);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param relation Map des paires A->B avec leur compteur
+     * @return Le graphe orienté filtré (seuil >= 6) et la table de symbole associé
+     *
+     * Construit le graphe orienté à partir des paries (A->B) ayant un compteur >= 6
+     */
+    private static Map.Entry<Digraph, String[]> buildGraph(Map<String, Integer> relation) {
+        Map<String, Integer> authorsToId = new HashMap<>();
+        int idCount = 0;
+
+        for (Map.Entry<String, Integer> entry : relation.entrySet()) {
+            if (entry.getValue() >= 6) {
+                String[] parts = entry.getKey().split("->");
+                for (String name : parts) {
+                    if (!authorsToId.containsKey(name)) {
+                        authorsToId.put(name, idCount++);
+                    }
+                }
+            }
+        }
+
+        Digraph graph = new Digraph(idCount);
+        for (Map.Entry<String, Integer> entry : relation.entrySet()) {
+            if (entry.getValue() >= 6) {
+                String[] parts = entry.getKey().split("->");
+                int u = authorsToId.get(parts[0]);
+                int v = authorsToId.get(parts[1]);
+                graph.addEdge(u, v);
+            }
+        }
+
+        // On inverse la Symbol Table pour retrouver le nom à partir de l'ID
+        String[] nameById = new String[idCount];
+        for (String name : authorsToId.keySet()) {
+            nameById[authorsToId.get(name)] = name;
+        }
+
+        return Map.entry(graph, nameById);
+    }
+
+    /**
+     * @param graph Le graphe orienté filtré
+     * @param nameById Tableau associant un ID à un nom d'auteur
+     * @return Une map associant l'ID de chaque CFC à la liste de ses membres
+     *
+     * Calcule les composantes fortement connexes via Kosaraju-Sharir
+     */
+    private static Map<Integer, List<String>> computeSCC(Digraph graph, String[] nameById) {
+        // Selon https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/KosarajuSharirSCC.html, c'est un ADT qui permet de calculer les composentes à connexité forte
+        KosarajuSharirSCC scc = new KosarajuSharirSCC(graph);
+
+        // Pour regrouper les auteurs par communauté
+        Map<Integer, List<String>> components = new HashMap<>();
+        for (int v = 0; v < graph.V(); v++) {
+            int id = scc.id(v);
+            components.computeIfAbsent(id, k -> new ArrayList<>()).add(nameById[v]);
+        }
+
+        return components;
+    }
+
+    /**
+     * @param filename Nom du fichier de sortie
+     * @param sizes Collection des tailles à écrire
+     *
+     * Ecrit une collection de tailles dans un fichier CSV (une taille par ligne)
+     */
+    private static void writeSizesToCSV(String filename, Collection<Integer> sizes) throws FileNotFoundException{
+        try (PrintWriter pw = new PrintWriter(filename)) {
+            pw.println("size");
+            for (int size : sizes) pw.println(size);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
             System.err.println("""
@@ -226,102 +356,26 @@ public class DblpParsingDemo {
                 DblpPublicationGenerator.Publication p = opt.get();
 
                 processPublication(opt.get(), uf);
+                updateRelation(relation, p.authors);
                 // Condition online
                 if (pubCount % Math.pow(10, 5) == 0) {
                     printStats(pubCount, uf, getTop10(uf));
                 }
-
-                // Pour éviter des erreurs à la compilation après factorisation
-                List<String> authors = p.authors;
-
-                int k = authors.size();
-                // autres auteurs (peut être vide si k == 1)
-                List<String> others = (k > 1) ? authors.subList(1, k) : List.of();
-
-                // Préparation pour la construction du graphe orienté
-                if (k >= 2) {
-                    String authorA = authors.get(0);
-
-                    for (int i = 1; i < k; i++) {
-                        String authorB = authors.get(i);
-
-                        if (!authorB.equals(authorA)) {
-                            String pair = authorA + "->" + authorB;
-
-                            relation.merge(pair, 1, Integer::sum);
-                        }
-                    }
-                }
             }
+            writeSizesToCSV("uf.csv", getSizeOfCommunities(uf));
 
-            Map<String, Integer> authorsToId = new HashMap<>();
-            int idCount = 0;
+            Map.Entry<Digraph, String[]> graphData = buildGraph(relation);
+            Digraph graph = graphData.getKey();
+            String[] nameById = graphData.getValue();
+            
+            Map<Integer, List<String>> components = computeSCC(graph, nameById);
+            printTop10SCC(components, graph, nameById);
 
-            for (Map.Entry<String, Integer> entry : relation.entrySet()) {
-                if (entry.getValue() >= 6) {
-                    String[] parts = entry.getKey().split("->");
-                    for (String name : parts) {
-                        if (!authorsToId.containsKey(name)) {
-                            authorsToId.put(name, idCount++);
-                        }
-                    }
-                }
+            List<Integer> cfcSizes = new ArrayList<>();
+            for (List<String> members : components.values()) {
+                cfcSizes.add(members.size());
             }
-
-            Digraph graph = new Digraph(idCount);
-            for (Map.Entry<String, Integer> entry : relation.entrySet()) {
-                if (entry.getValue() >= 6) {
-                    String[] parts = entry.getKey().split("->");
-                    int u = authorsToId.get(parts[0]);
-                    int v = authorsToId.get(parts[1]);
-                    graph.addEdge(u, v);
-                }
-            }
-
-            // On inverse la Symbol Table pour retrouver le nom à partir de l'ID
-            String[] nameById = new String[idCount];
-            for (String name : authorsToId.keySet()) {
-                nameById[authorsToId.get(name)] = name;
-            }
-
-            // Selon https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/KosarajuSharirSCC.html, c'est un ADT qui permet de calculer les composentes à connexité forte
-            KosarajuSharirSCC scc = new KosarajuSharirSCC(graph);
-
-            // Pour regrouper les auteurs par communauté
-            Map<Integer, List<String>> components = new HashMap<>();
-            for (int v = 0; v < graph.V(); v++) {
-                int id = scc.id(v);
-                components.computeIfAbsent(id, k -> new ArrayList<>()).add(nameById[v]);
-            }
-
-            System.out.println("Nombre de SCC détectées : " + scc.count());
-
-            System.out.println("\n --- Test du plus court chemin ---");
-            Random rand = new Random();
-            int nbTests = scc.count(); // Nombre de paires à tester
-            int cheminsTrouves = 0;
-            System.out.println("\n--- Test de " + nbTests + " paires aléatoires ---");
-            for (int i = 0; i < nbTests; i++) {
-                int idA = rand.nextInt(idCount);
-                int idB = rand.nextInt(idCount);
-
-                int dist = BFS(graph, idA, idB);
-
-                if (dist != -1) {
-                    System.out.println("[SUCCÈS] " + nameById[idA] + " -> " + nameById[idB] + " : " + dist + " sauts");
-                    cheminsTrouves++;
-                }
-            }
-            System.out.println("Bilan : " + cheminsTrouves + "/" + nbTests + " chemins trouvés.");
-
-            List<Integer> res = getSizeOfCommunities(uf);
-            // Écriture dans un fichier CSV
-            try (PrintWriter pw = new PrintWriter("communities.csv")) {
-                pw.println("size");
-                for (int size : res) {
-                    pw.println(size);
-                }
-            }
+            writeSizesToCSV("cfc.csv", cfcSizes);
         }
     }
 }
