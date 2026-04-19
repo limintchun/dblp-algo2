@@ -267,9 +267,16 @@ public class DblpParsingDemo {
      * Ecrit une collection de tailles dans un fichier CSV (une taille par ligne)
      */
     private static void writeSizesToCSV(String filename, Collection<Integer> sizes) throws FileNotFoundException{
+        Map<Integer, Integer> counts = new HashMap<>();
+        for (int s : sizes) {
+            counts.put(s, counts.getOrDefault(s, 0) + 1);
+        }
+
         try (PrintWriter pw = new PrintWriter(filename)) {
-            pw.println("size");
-            for (int size : sizes) pw.println(size);
+            pw.println("community_size,count");
+            for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
+                pw.println(entry.getKey()  + "," + entry.getValue());
+            }
         }
     }
 

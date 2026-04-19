@@ -9,12 +9,13 @@ def uf():
     with open(csv_path, "r") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            data.append(int(row["size"]))
+            data.append(int(row["community_size"]))
 
+    data_array = np.array(data)
     os.makedirs("../results/plots", exist_ok=True)
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    bins = np.logspace(np.log10(min(data)), np.log10(max(data)), 50)
+    bins = np.logspace(np.log10(data_array.min()), np.log10(data_array.max()), 50)
     
     ax.hist(data, bins=bins, log=True, color="steelblue", edgecolor="white")
     ax.set_xscale('log') 
@@ -34,12 +35,13 @@ def cfc():
     with open(csv_path, "r") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            data.append(int(row["size"]))
+            data.append(int(row["community_size"]))
 
+    data_array = np.array(data)
     os.makedirs("../results/plots", exist_ok=True)
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    bins = np.logspace(np.log10(data.min()), np.log10(data.max()), 50)
+    bins = np.logspace(np.log10(data_array.min()), np.log10(data_array.max()), 50)
 
     ax.hist(data, bins=50, log=True, color="steelblue", edgecolor="white")
     ax.set_xlabel("Taille des communautés")
