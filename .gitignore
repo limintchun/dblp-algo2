@@ -1,3 +1,7 @@
 *.class
 .DS_Store
 *.gz
+
+# Fichiers et dossiers créés par l'IDE IntelliJ
+.idea/
+*.iml
