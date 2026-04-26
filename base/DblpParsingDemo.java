@@ -3,20 +3,25 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
+// Ci-dessous, utilisation autorisée sous réserve de mention dans le rapport.
 import edu.princeton.cs.algs4.Digraph;
 import edu.princeton.cs.algs4.KosarajuSharirSCC;
-// on a le droit de l'utiliser mais il faut le citer dans le rapport
+
 
 /**
  * Usage:
  *   java -Xmx2g DblpParsingDemo <dblp.xml|dblp.xml.gz> <dblp.dtd> [--limit=1000000]
  */
 public class DblpParsingDemo {
+
     /**
-     * @param graph le graphe orienté contenant les auteurs ayant minimum 6 publications en communs
-     * @param vertices les sommets qu'on va parcourir
+     * <p>
+     *   Calcule le plus cours chemin.
+     * </p>
      *
-     * Calcule le plus cours chemin
+     * @param graph     Le graphe orienté contenant les auteurs ayant minimum 6 publications en communs
+     * @param vertices  Les sommets qu'on va parcourir
      */
     private static int computeDiameter(Digraph graph, List<Integer> vertices) {
         Set<Integer> inComponent = new HashSet<>(vertices);
@@ -42,23 +47,27 @@ public class DblpParsingDemo {
     }
 
 
-
     /**
+     * <p>
+     *   Calcule et extrait la taille des 10 plus grandes communautés identifées par la structure Union-Find.
+     * </p>
+     *
      * @param uf Regroupements d'auteurs
      * @return Une liste d'entiers conteant les tailles des 10 plus grandes communautés triée par ordre décroissant
-     *
-     * Calcule et extrait la taille des 10 plus grandes communautés identifées par la structure Union-Find.
      */
     private static List<Integer> getTop10(UnionFind uf) {
         return processTop10(uf.sizeOfComm().values());
     }
 
+
     /**
-     * @param scc Contient les identifiants de composante pour chaque sommet
-     * @param numVertices Le nombre total de sommets à parcourir dans le graphe
-     * @return Une liste des tailles des 10 plus grandes commposantes fortement connexes, triée par ordre décroissant
+     * <p>
+     *   Calcule et extrait la taille des 10 plus grandes communautés identifées par la structure SCC.
+     * </p>
      *
-     * Calcule et extrait la taille des 10 plus grandes communautés identifées par la structure SCC.
+     * @param scc Contient  Les identifiants de composante pour chaque sommet
+     * @param numVertices   Le nombre total de sommets à parcourir dans le graphe
+     * @return Une liste des tailles des 10 plus grandes commposantes fortement connexes, triée par ordre décroissant
      */
     private static List<Integer> getTop10(KosarajuSharirSCC scc, int numVertices) {
         int m = scc.count();
@@ -72,11 +81,14 @@ public class DblpParsingDemo {
         return processTop10(sizes);
     }
 
+
     /**
+     * <p>
+     *   Extrait les 10 pulus grandes valeurs d'une collection de tailles.
+     * </p>
+     *
      * @param allSizes Collection contenant les tailles de toutes les communautés identifées
      * @return Une liste contenant les 10 tailles les plus élevées, triée par ordre décroissant
-     *
-     * Extrait les 10 pulus grandes valeurs d'une collection de tailles
      */
     private static List<Integer> processTop10(Collection<Integer> allSizes) {
         PriorityQueue<Integer> minHeap = new PriorityQueue<>(11);
@@ -89,11 +101,14 @@ public class DblpParsingDemo {
         return top10;
     }
 
+
     /**
-     * @param p la publication à traiter
-     * @param uf la structure Union-Find
+     * <p>
+     *   Traite une publication en ajoutant ses auteurs à l'Union-Find.
+     * </p>
      *
-     * Traite une publication en ajoutant ses auteurs à l'Union-Find.
+     * @param p     La publication à traiter
+     * @param uf    La structure Union-Find
      */
     private static void processPublication(DblpPublicationGenerator.Publication p, UnionFind uf) { 
 
@@ -119,10 +134,11 @@ public class DblpParsingDemo {
         }
     }
 
+
     /**
-     * @param components Map des CFC avec leurs membres
-     * @param graph Le graphe orienté filtré
-     * @param nameById Tableau associant un ID à un nom d'auteur
+     * @param components    Map des CFC avec leurs membres
+     * @param graph         Le graphe orienté filtré
+     * @param nameById      Tableau associant un ID à un nom d'auteur
      */
     private static void printTop10SCC(Map<Integer, List<String>> components, Digraph graph, String[] nameById) {
         Map<String, Integer> authorsToId = new HashMap<>();
@@ -150,21 +166,26 @@ public class DblpParsingDemo {
         }
     }
 
-    private static void printStats(long pubCount, UnionFind uf, List<Integer> top10) { 
-        /**
-         * @param pubCount le nombre de publication
-         * @param uf les communautés
-         * @param top10 la liste contenant les tailles des 10 plus grandes communautés
-         *
-         * S'occupe d'afficher le résultat après le parsing
-         */
+
+    /**
+     * <p>
+     *   S'occupe d'afficher le résultat après le parsing.
+     * </p>
+     *
+     * @param pubCount  Le nombre de publication
+     * @param uf        Les communautés
+     * @param top10     La liste contenant les tailles des 10 plus grandes communautés
+     */
+    private static void printStats(long pubCount, UnionFind uf, List<Integer> top10) {
         System.out.println("------ Exigence online : " + pubCount + "ème publication -----");
         System.out.println("Il y a " + uf.getCount() + " communautés.");
         System.out.println("Top 10 des plus grandes communautés");
+
         for (int i = 0; i < top10.size(); i++) {
             System.out.println((i+1) + ". " + top10.get(i) + " auteurs");
         }
     }
+
 
     private static List<Integer> getSizeOfCommunities(UnionFind uf) {
         Map<String, Integer> sizeOfCommunities = uf.sizeOfComm();
@@ -175,11 +196,11 @@ public class DblpParsingDemo {
         return res;
     }
 
-    /**
-     * @param relation Map des paires A->B avec leur compteur
-     * @param authors Liste des auteurs de la publication courante
-     */
 
+    /**
+     * @param relation  Map des paires A->B avec leur compteur
+     * @param authors   Liste des auteurs de la publication courante
+     */
     private static void updateRelation(Map<String, Integer> relation, List<String> authors) {
         int k = authors.size();
 
@@ -199,11 +220,14 @@ public class DblpParsingDemo {
         }
     }
 
+
     /**
-     * @param relation Map des paires A->B avec leur compteur
-     * @return Le graphe orienté filtré (seuil >= 6) et la table de symbole associé
+     * <p>
+     *   Construit le graphe orienté à partir des paries (A->B) ayant un compteur >= 6.
+     * </p>
      *
-     * Construit le graphe orienté à partir des paries (A->B) ayant un compteur >= 6
+     * @param relation  Map des paires A->B avec leur compteur
+     * @return Le graphe orienté filtré (seuil >= 6) et la table de symbole associé
      */
     private static Map.Entry<Digraph, String[]> buildGraph(Map<String, Integer> relation) {
         Map<String, Integer> authorsToId = new HashMap<>();
@@ -239,12 +263,15 @@ public class DblpParsingDemo {
         return Map.entry(graph, nameById);
     }
 
+
     /**
-     * @param graph Le graphe orienté filtré
-     * @param nameById Tableau associant un ID à un nom d'auteur
-     * @return Une map associant l'ID de chaque CFC à la liste de ses membres
+     * <p>
+     *   Calcule les composantes fortement connexes via Kosaraju-Sharir.
+     * </p>
      *
-     * Calcule les composantes fortement connexes via Kosaraju-Sharir
+     * @param graph     Le graphe orienté filtré
+     * @param nameById  Tableau associant un ID à un nom d'auteur
+     * @return Une map associant l'ID de chaque CFC à la liste de ses membres
      */
     private static Map<Integer, List<String>> computeSCC(Digraph graph, String[] nameById) {
         // Selon https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/KosarajuSharirSCC.html, c'est un ADT qui permet de calculer les composentes à connexité forte
@@ -260,25 +287,64 @@ public class DblpParsingDemo {
         return components;
     }
 
+
     /**
-     * @param filename Nom du fichier de sortie
-     * @param sizes Collection des tailles à écrire
+     * <p>
+     *   Écrit une collection de tailles dans un fichier CSV (une taille par ligne).
+     * </p>
      *
-     * Ecrit une collection de tailles dans un fichier CSV (une taille par ligne)
+     * @param filename  Nom du fichier de sortie
+     * @param sizes     Collection des tailles à écrire
      */
-    private static void writeSizesToCSV(String filename, Collection<Integer> sizes) throws FileNotFoundException{
+    private static void writeSizesToCSV(String filename, Collection<Integer> sizes) throws FileNotFoundException {
         Map<Integer, Integer> counts = new HashMap<>();
+
         for (int s : sizes) {
             counts.put(s, counts.getOrDefault(s, 0) + 1);
         }
 
         try (PrintWriter pw = new PrintWriter(filename)) {
             pw.println("community_size,count");
+
             for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
                 pw.println(entry.getKey()  + "," + entry.getValue());
             }
         }
     }
+
+
+    /**
+     * <p>
+     *   Écrit les 10 plus grandes communautés (CFC) dans un fichier CSV.
+     *   Une ligne par auteur avec le ranking de la communauté et son nom.
+     * </p>
+     * <p>
+     *   Sur base de la documentation du projet (https://dblp.org/xml/docu/dblpxml.pdf) ;
+     *   aucun traitement spécifique des noms n’est nécessaire pour le CSV.
+     * </p>
+     *
+     * @param filename      Nom du fichier de sortie
+     * @param components    Map des CFC avec leurs membres
+     */
+    private static void writeTop10SCCAuthorsToCSV(String filename, Map<Integer, List<String>> components) throws FileNotFoundException {
+        List<Map.Entry<Integer, List<String>>> top10 = components.entrySet().stream()
+            .sorted((a, b) -> b.getValue().size() - a.getValue().size())
+            .limit(10)
+            .collect(Collectors.toList());
+
+        try (PrintWriter pw = new PrintWriter(filename)) {
+            pw.println("community_rank,author");
+
+            for (int rank = 0; rank < top10.size(); rank++) {
+                List<String> names  = top10.get(rank).getValue();
+
+                for (String name : names) {
+                    pw.println((rank + 1) + "," + name);
+                }
+            }
+        }
+    }
+
 
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
@@ -377,6 +443,7 @@ public class DblpParsingDemo {
             
             Map<Integer, List<String>> components = computeSCC(graph, nameById);
             printTop10SCC(components, graph, nameById);
+            writeTop10SCCAuthorsToCSV("top10_scc_authors.csv", components);
 
             List<Integer> cfcSizes = new ArrayList<>();
             for (List<String> members : components.values()) {

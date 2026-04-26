@@ -3,6 +3,7 @@ import numpy as np
 import csv
 import os
 
+
 def uf():
     data = []
     csv_path = "uf.csv"
@@ -28,6 +29,7 @@ def uf():
     plt.tight_layout()
     plt.savefig("../results/plots/uf.png", dpi=150)
     print("Graphique généré : ../results/plots/uf.png")
+
 
 def cfc():
     data = []

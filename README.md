@@ -3,8 +3,8 @@
 ## Description
 
 L'objectif est de pouvoir déterminer les différentes communautés de chercheur-euse-s sur base de deux critères :
-  - les communautés de co-publication : groupes de personne ayaynt une chaine de co-publications reliants les auteur-rice-s.
-  - les communautés : groupes de chercheur-euse-s  ayant au minimum 6 publications en commun.
+  - Les communautés de co-publication : groupes de personnes ayant une chaine de co-publications reliant les auteur-rice-s.
+  - Les communautés : groupes de chercheur-euse-s ayant au minimum 6 publications en commun.
 
 --- 
 
@@ -41,6 +41,9 @@ source venv/bin/activate
 pip install --upgrade pip && pip install matplotlib
 ```
 
+***Remarque ; `venv` est créé dans le dossier courant donc il faut se placer à la racine
+du projet ou dans le dossier `/base`.***
+
 Lancer le script de visualisation :
 
 ```bash
@@ -48,3 +51,38 @@ python3 base/main.py
 ```
 
 L'histogramme sera sauvegardé dans `results/plots/communities.png`.
+
+## Tâche bonus
+
+### Prérequis
+
+Avoir exécuté le programme Java au préalable afin de générer le fichier 
+`results/base/top10_scc_authors.csv` contenant les auteur-rice-s des 10 plus grandes communautés de la tâche B.
+
+### Générer les graphiques d’association aux pays
+
+Créer et activer un environnement virtuel Python, puis installer les dépendances :
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip && pip install matplotlib
+```
+
+***Remarque ; `venv` est créé dans le dossier courant donc il faut se placer à la racine
+du projet ou dans le dossier `/base`.***
+
+Lancer le script :
+
+```bash
+cd base
+python3 openalex_countries.py
+```
+
+Le script utilise l'API OpenAlex pour rechercher l'institution associée à chaque auteur-rice 
+puis en déduit le pays correspondant.
+
+Deux fichiers sont générés :
+- `results/plots/countries_affiliations.png` indiquant si chaque communauté est associée à un ou plusieurs pays.
+- `results/plots/countries_proportions.png` indiquant la proportion d’auteur-rice-s par pays dans chaque communauté.
+

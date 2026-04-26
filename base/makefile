@@ -1,11 +1,11 @@
 # Variables pour faciliter la maintenance
-JC = javac
-JVM = java
-CP = ".:algs4.jar"
-MAIN = DblpParsingDemo
-XML = dblp-2026-01-01.xml.gz
-DTD = dblp.dtd
-# LIMIT = 100000
+JC        = javac
+JVM       = java
+CP        = ".:algs4.jar"
+MAIN      = DblpParsingDemo
+XML       = dblp-2026-01-01.xml.gz
+DTD       = dblp.dtd
+# LIMIT   = 100000
 
 # La cible par défaut (lance la compilation puis l'exécution)
 all: run
