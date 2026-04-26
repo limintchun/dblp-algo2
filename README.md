@@ -13,16 +13,10 @@ L'objectif est de pouvoir déterminer les différentes communautés de chercheur
 
 ## Compilation et exécution du parser java
 
-### Compilation
+### Compilation et exécution
 ```bash
-javac DblpPublicationGenerator.java DblpParsingDemo.java
+make
 ```
-
-### Exécution
-```bash
-java DblpParsingDemo dblp-2026-01-01.xml.gz dblp.dtd --limit=N
-```
-> `--limit=N` est optionnel et permet de se limiter aux *N* premières publications.
 
 ### Prérequis
 
