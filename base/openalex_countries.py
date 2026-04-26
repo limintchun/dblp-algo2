@@ -158,7 +158,7 @@ def plot_countries_affiliations_by_communities(count):
 
     table_data.append([community_rank, countries_text, affiliation])
 
-  fig, ax = plt.subplots(figsize=(10, 4))
+  fig, ax = plt.subplots(figsize=(14, 5))
   ax.axis("off")
   table = ax.table(
       cellText=table_data,
@@ -168,6 +168,7 @@ def plot_countries_affiliations_by_communities(count):
   table.auto_set_font_size(False)
   table.set_fontsize(10)
   table.scale(1, 1.5)
+  table.auto_set_column_width(col=[0, 1, 2])
 
   plt.title("Association des 10 plus grandes communautés à un ou plusieurs pays")
 
@@ -199,7 +200,7 @@ def plot_countries_proportions_by_communities(proportions):
   # Trier pour avoir un ordre et garantir une cohérence visuelle
   all_countries = sorted(all_countries)
 
-  plt.figure(figsize=(10, 6))
+  plt.figure(figsize=(16, 8))
 
   left = [0] * len(communities) # Graphique hozirontal
 
@@ -250,10 +251,10 @@ def plot_countries_proportions_by_communities(proportions):
   plt.grid(axis="x", linestyle="--", alpha=0.5)
 
   plt.title("Proportion d’auteur-rice-s travaillant dans différents pays")
-  plt.legend(title="Pays", bbox_to_anchor=(1.05, 1), loc="upper left")
+  plt.legend(title="Pays", bbox_to_anchor=(1.02, 1), loc="upper left")
 
-  plt.tight_layout()
-  plt.savefig(COUNTRIES_PROPORTIONS_PNG_PATH, dpi=150)
+  plt.tight_layout(rect=[0, 0, 0.75, 1])
+  plt.savefig(COUNTRIES_PROPORTIONS_PNG_PATH, dpi=150, bbox_inches="tight")
   plt.close()
 
 
