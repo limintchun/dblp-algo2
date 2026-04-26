@@ -6,7 +6,7 @@ L'objectif est de pouvoir déterminer les différentes communautés de chercheur
   - Les communautés de co-publication : groupes de personnes ayant une chaine de co-publications reliant les auteur-rice-s.
   - Les communautés : groupes de chercheur-euse-s ayant au minimum 6 publications en commun.
 
---- 
+---
 
 ## Important
 ***Ne pas décompresser base/dblp.xml.gz***. Le parser lit directement le fichier compressé.
@@ -24,12 +24,9 @@ java DblpParsingDemo dblp-2026-01-01.xml.gz dblp.dtd --limit=N
 ```
 > `--limit=N` est optionnel et permet de se limiter aux *N* premières publications.
 
-## Tâche 1
-
 ### Prérequis
 
-Avoir exécuté le programme Java au préalable, ce qui génère le fichier `base/results.csv`
-via la fonction `getSizeOfCommunities(UnionFind uf)`.
+Avoir exécuté le programme Java au préalable, ce qui génère le fichier `base/uf.csv` et `base/cfc.csv`.
 
 ### Générer l'histogramme des tailles des communautés
 
@@ -50,7 +47,7 @@ Lancer le script de visualisation :
 python3 base/main.py
 ```
 
-L'histogramme sera sauvegardé dans `results/plots/communities.png`.
+Les histogrammes seront sauvegardés dans le dossier `results/plots/`.
 
 ## Tâche bonus
 
